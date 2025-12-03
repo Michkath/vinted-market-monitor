@@ -1,0 +1,45 @@
+name: Daily Vinted Scrape
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # Tourne tous les jours à 6h00 du matin (UTC)
+  workflow_dispatch: # Permet de lancer manuellement avec un bouton (pour tester tout de suite)
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v3
+
+      - name: Installer Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Installer les dépendances
+        run: |
+          pip install -r requirements.txt
+          seleniumbase install chromedriver
+
+      - name: Installer l'écran virtuel (Xvfb)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+
+      - name: Lancer le Scraper
+        env:
+          # Les secrets (à configurer dans Settings > Secrets)
+          PROJECT_URL: ${{ secrets.PROJECT_URL }}
+          API_KEY: ${{ secrets.API_KEY }}
+          TABLE_NAME: ${{ secrets.TABLE_NAME }}
+          
+          # La configuration du Scraper (C'est ici qu'on règle le comportement)
+          SEARCH_QUERY: "sac luxe"  # Tu peux changer ça quand tu veux ici !
+          MAX_PAGES: "2"            # On limite à 2 pages pour aller vite
+          DELAY_SECONDS: "2.0"      # Pause de 2s entre les pages (sécurité)
+        
+        run: |
+          # On lance le script avec l'écran virtuel
+          xvfb-run python vinted.py
